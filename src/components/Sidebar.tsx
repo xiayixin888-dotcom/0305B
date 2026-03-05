@@ -3,7 +3,7 @@ import { Bot, X, Play, Square, ChevronRight, User, History, Plus } from 'lucide-
 import { Message, Bubble, TaskItem, CardData } from '../types';
 import { SmartInput } from './SmartInput';
 import { TaskPlan } from './TaskPlan';
-import { AudienceCard, ConfigCard } from './Cards';
+import { AudienceCard, ConfigCard, ContentPreviewCard, TaskSummaryCard } from './Cards';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface SidebarProps {
@@ -58,11 +58,14 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '已锁定合肥市学区房需求群体，请问预算范围是？', delay: 500 },
       { type: 'TYPE_TEXT', payload: '100 万以内', delay: 1500 },
       { type: 'SEND_MESSAGE', delay: 500 },
-      { type: 'ADD_CARD', payload: { type: 'audience', count: 1285, samples: ['张三', '李四', '王五'] }, delay: 1000 },
+      { type: 'ADD_AI_MESSAGE_STREAM', payload: '收到。为您确认圈选条件：\n\n城市：合肥市\n需求：学区房\n预算：100万以内\n\n是否确认生成人群包？', delay: 500 },
+      { type: 'TYPE_TEXT', payload: '确认', delay: 1500 },
+      { type: 'SEND_MESSAGE', delay: 500 },
+      { type: 'ADD_CARD', payload: { type: 'audience', name: '合肥100w学区房', count: 1285, updateCycle: 'once', samples: ['张三', '李四', '王五'] }, delay: 1000 },
       { type: 'OPEN_SLIDE_OVER', payload: '张三', delay: 1500 },
       { type: 'CLOSE_SLIDE_OVER', delay: 2500 },
       { type: 'CLICK_CARD_CONFIRM', delay: 1000 },
-      { type: 'SEND_MESSAGE_DIRECT', payload: '确认圈选', delay: 500 },
+      { type: 'SEND_MESSAGE_DIRECT', payload: '确认创建', delay: 500 },
       { type: 'LOCK_INPUT', delay: 0 },
       { type: 'ADD_PROGRESS', payload: 0, delay: 500 },
       { type: 'UPDATE_PROGRESS', payload: 50, delay: 800 },
@@ -78,19 +81,33 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
       { type: 'SET_MODE', payload: '执行模式', delay: 500 },
       { type: 'TYPE_TEXT', payload: '每天中午 11:30，私聊发送 @活动话术1，发送人选择 C 端客服。', delay: 800 },
       { type: 'SEND_MESSAGE', delay: 500 },
-      { type: 'ADD_AI_MESSAGE_STREAM', payload: '已为您提取 @活动话术1 的具体内容：‘【限时特惠】合肥政务区学区房最新名单已出，点击查看...’，请确认内容是否正确？', delay: 1000 },
+      { type: 'ADD_AI_MESSAGE_STREAM', payload: '已为您提取 @活动话术1 的具体内容，请确认内容是否正确？', delay: 1000 },
+      { type: 'ADD_CARD', payload: { type: 'content_preview', title: '素材预览 (@活动话术1)', content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...' }, delay: 500 },
       { type: 'TYPE_TEXT', payload: '没问题', delay: 2000 },
       { type: 'SEND_MESSAGE', delay: 500 },
       { type: 'ADD_CARD', payload: { type: 'config', senders: ['C端客服'], blacklists: [] }, delay: 1000 },
       { type: 'CLICK_CARD_CONFIRM', delay: 1500 },
       { type: 'SEND_MESSAGE_DIRECT', payload: '确认配置', delay: 500 },
+      { type: 'ADD_AI_MESSAGE_STREAM', payload: '请确认最终任务信息：', delay: 500 },
+      { type: 'ADD_CARD', payload: { 
+        type: 'task_summary', 
+        taskName: '每日私聊推送_活动话术1',
+        channel: '企微私聊',
+        pushTime: '每日 11:30',
+        pushInterval: '每天',
+        recipient: '合肥100w学区房 (1,285人)',
+        sender: 'C端客服',
+        content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...'
+      }, delay: 1000 },
+      { type: 'CLICK_CARD_CONFIRM', delay: 1500 },
+      { type: 'SEND_MESSAGE_DIRECT', payload: '确认执行任务', delay: 500 },
       { type: 'ADD_PROGRESS', payload: 0, delay: 500 },
       { type: 'UPDATE_PROGRESS', payload: 30, delay: 800 },
       { type: 'TYPE_TEXT', payload: '停一下', delay: 500 },
       { type: 'SEND_MESSAGE', delay: 500 },
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '任务已锁定，无法中止。', delay: 500 },
       { type: 'UPDATE_PROGRESS', payload: 100, delay: 1000 },
-      { type: 'ADD_AI_MESSAGE_STREAM', payload: '推送任务已排期成功。将在每日 11:30 自动执行。', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_活动话术1' }, delay: 500 },
+      { type: 'ADD_AI_MESSAGE_STREAM', payload: '推送任务已排期成功！\n\n任务名称：每日私聊推送_活动话术1\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_活动话术1' }, delay: 500 },
       { type: 'ADD_BUBBLE', payload: { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_活动话术1', tabName: '[AI] 每日私聊推送_活动话术1' }] }, delay: 1000 },
       { type: 'TOGGLE_BUBBLE', payload: 'b2', delay: 1500 },
       { type: 'CLICK_BUBBLE_ITEM', payload: '[AI] 每日私聊推送_活动话术1', delay: 1500 },
@@ -181,6 +198,11 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
           setMessages(prev => {
             const newMsgs = [...prev];
             const lastMsg = newMsgs[newMsgs.length - 1];
+            // If the last message is AI and doesn't have a card, attach it.
+            // BUT, if the last message is AI and HAS content, maybe we want to attach to it?
+            // Or create a new message?
+            // In script2, we have ADD_AI_MESSAGE_STREAM then ADD_CARD.
+            // We should probably attach to the last message if it's AI and has no card.
             if (lastMsg && lastMsg.role === 'ai' && !lastMsg.card) {
                 lastMsg.card = step.payload as CardData;
             } else {
@@ -201,9 +223,12 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
         case 'CLICK_CARD_CONFIRM':
           setMessages(prev => {
             const newMsgs = [...prev];
-            const lastMsg = [...newMsgs].reverse().find(m => m.card);
-            if (lastMsg && lastMsg.card) {
-              lastMsg.card = { ...lastMsg.card, confirmed: true };
+            // Find the last card and mark confirmed
+            for (let i = newMsgs.length - 1; i >= 0; i--) {
+                if (newMsgs[i].card) {
+                    newMsgs[i].card!.confirmed = true;
+                    break;
+                }
             }
             return newMsgs;
           });
@@ -213,20 +238,18 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
           setInputLocked(true);
           setDemoStep(s => s + 1);
           break;
-        case 'UNLOCK_INPUT':
-          setInputLocked(false);
-          setDemoStep(s => s + 1);
-          break;
         case 'ADD_PROGRESS':
           setMessages(prev => [...prev, { id: Date.now().toString(), role: 'ai', progress: step.payload as number }]);
           setDemoStep(s => s + 1);
           break;
         case 'UPDATE_PROGRESS':
-          setMessages(prev => {
+           setMessages(prev => {
             const newMsgs = [...prev];
-            const lastMsg = [...newMsgs].reverse().find(m => m.progress !== undefined);
-            if (lastMsg) {
-              lastMsg.progress = step.payload as number;
+            for (let i = newMsgs.length - 1; i >= 0; i--) {
+                if (newMsgs[i].progress !== undefined) {
+                    newMsgs[i].progress = step.payload as number;
+                    break;
+                }
             }
             return newMsgs;
           });
@@ -241,7 +264,6 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
           setDemoStep(s => s + 1);
           break;
         case 'CLICK_BUBBLE_ITEM':
-          setActiveBubbleId(null);
           onOpenTab(step.payload as string);
           onClose();
           setDemoStep(s => s + 1);
@@ -305,20 +327,35 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
       { id: 'a1', role: 'ai', taskPlan: [{id: '1', text: '意图解析：合肥市+学区房需求', status: 'done'}, {id: '2', text: '计划拆解：提取城市、需求标签', status: 'done'}] },
       { id: 'a2', role: 'ai', content: '已锁定合肥市学区房需求群体，请问预算范围是？' },
       { id: 'u2', role: 'user', content: '100 万以内' },
-      { id: 'a3', role: 'ai', card: { type: 'audience', count: 1285, samples: ['张三', '李四', '王五'], confirmed: true } },
-      { id: 'u3', role: 'user', content: '确认圈选' },
+      { id: 'a2_confirm', role: 'ai', content: '收到。为您确认圈选条件：\n- 城市：合肥市\n- 需求：学区房\n- 预算：100万以内\n\n是否确认生成人群包？' },
+      { id: 'u2_confirm', role: 'user', content: '确认' },
+      { id: 'a3', role: 'ai', card: { type: 'audience', name: '合肥100w学区房', count: 1285, updateCycle: 'once', samples: ['张三', '李四', '王五'], confirmed: true } },
+      { id: 'u3', role: 'user', content: '确认创建' },
       { id: 'a4', role: 'ai', progress: 100 },
       { id: 'a5', role: 'ai', content: '人群包‘合肥100w学区房’已创建完成。', actionButton: { label: '查看详情', tabName: '[AI] 合肥100w学区房' } },
       { id: 'u4', role: 'user', content: '每天中午 11:30，私聊发送 @活动话术1，发送人选择 C 端客服。' },
-      { id: 'a6', role: 'ai', content: '已为您提取 @活动话术1 的具体内容：‘【限时特惠】合肥政务区学区房最新名单已出，点击查看...’，请确认内容是否正确？' },
+      { id: 'a6', role: 'ai', content: '已为您提取 @活动话术1 的具体内容，请确认内容是否正确？', card: { type: 'content_preview', title: '素材预览 (@活动话术1)', content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...' } },
       { id: 'u5', role: 'user', content: '没问题' },
       { id: 'a7', role: 'ai', card: { type: 'config', senders: ['C端客服'], blacklists: [], confirmed: true } },
       { id: 'u6', role: 'user', content: '确认配置' },
+      { id: 'a7_summary_msg', role: 'ai', content: '请确认最终任务信息：' },
+      { id: 'a7_summary', role: 'ai', card: { 
+        type: 'task_summary', 
+        taskName: '每日私聊推送_活动话术1',
+        channel: '企微私聊',
+        pushTime: '每日 11:30',
+        pushInterval: '每天',
+        recipient: '合肥100w学区房 (1,285人)',
+        sender: 'C端客服',
+        content: '【限时特惠】合肥政务区学区房最新名单已出，点击查看...',
+        confirmed: true
+      } },
+      { id: 'u6_exec', role: 'user', content: '确认执行任务' },
       { id: 'a8', role: 'ai', progress: 30 },
       { id: 'u7', role: 'user', content: '停一下' },
       { id: 'a9', role: 'ai', content: '任务已锁定，无法中止。' },
       { id: 'a10', role: 'ai', progress: 100 },
-      { id: 'a11', role: 'ai', content: '推送任务已排期成功。将在每日 11:30 自动执行。', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_活动话术1' } }
+      { id: 'a11', role: 'ai', content: '推送任务已排期成功！\n\n任务名称：每日私聊推送_活动话术1\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_活动话术1' } }
     ]);
     setBubbles([
       { id: 'b1', type: 'audience', text: '关联人群包(1)', items: [{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }] },
@@ -385,13 +422,15 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
             </div>
             <div className={`flex flex-col gap-2 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
               {msg.content && (
-                <div className={`px-4 py-2.5 rounded-2xl text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-sm'}`}>
+                <div className={`px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-sm'}`}>
                   {msg.content}
                 </div>
               )}
               {msg.taskPlan && <TaskPlan tasks={msg.taskPlan} />}
               {msg.card && msg.card.type === 'audience' && <AudienceCard data={msg.card} onUserClick={setSlideOverUser} onConfirm={() => {}} />}
               {msg.card && msg.card.type === 'config' && <ConfigCard data={msg.card} onConfirm={() => {}} />}
+              {msg.card && msg.card.type === 'content_preview' && <ContentPreviewCard data={msg.card} />}
+              {msg.card && msg.card.type === 'task_summary' && <TaskSummaryCard data={msg.card} onConfirm={() => {}} />}
               {msg.progress !== undefined && (
                 <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
                   <div className="flex justify-between text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
@@ -461,16 +500,26 @@ export function Sidebar({ onClose, onOpenTab }: SidebarProps) {
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {[
-                { title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', mode: '混合模式', onClick: loadHistoryDemo },
-                { title: '生成朋友圈文案', date: '昨天 15:20', mode: '执行模式', onClick: () => setShowHistory(false) },
-                { title: '分析近期客户流失原因', date: '3月1日 09:15', mode: '洞察模式', onClick: () => setShowHistory(false) }
+                { title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', crowdPackCount: 1, pushTaskCount: 1, onClick: loadHistoryDemo },
+                { title: '生成朋友圈文案', date: '昨天 15:20', crowdPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) },
+                { title: '分析近期客户流失原因', date: '3月1日 09:15', crowdPackCount: 1, pushTaskCount: 0, onClick: () => setShowHistory(false) }
               ].map((item, i) => (
                 <div key={i} className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0" onClick={item.onClick}>
                   <div className="flex justify-between items-start mb-1">
                     <div className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{item.title}</div>
                     <div className="text-xs text-zinc-500">{item.date}</div>
                   </div>
-                  <div className="text-xs text-zinc-500 bg-zinc-100 dark:bg-zinc-800 inline-block px-2 py-0.5 rounded">{item.mode}</div>
+                  <div className="flex gap-2">
+                    {item.crowdPackCount > 0 && (
+                        <span className="text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">人群包({item.crowdPackCount})</span>
+                    )}
+                    {item.pushTaskCount > 0 && (
+                        <span className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">推送任务({item.pushTaskCount})</span>
+                    )}
+                    {item.crowdPackCount === 0 && item.pushTaskCount === 0 && (
+                         <span className="text-xs text-zinc-400">无关联数据</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

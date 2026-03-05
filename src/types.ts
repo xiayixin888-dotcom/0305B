@@ -9,8 +9,10 @@ export interface TaskItem {
 }
 
 export type CardData = 
-  | { type: 'audience'; count: number; samples: string[]; confirmed?: boolean }
-  | { type: 'config'; senders: string[]; blacklists: string[]; confirmed?: boolean };
+  | { type: 'audience'; name: string; count: number; updateCycle: 'hour' | 'day' | 'once'; samples: string[]; confirmed?: boolean }
+  | { type: 'config'; senders: string[]; blacklists: string[]; confirmed?: boolean }
+  | { type: 'content_preview'; title: string; content: string; confirmed?: boolean }
+  | { type: 'task_summary'; taskName: string; channel: string; pushTime: string; pushInterval: string; recipient: string; content: string; sender: string; confirmed?: boolean };
 
 export interface Message {
   id: string;
