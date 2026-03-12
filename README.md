@@ -1,20 +1,21 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 页面预览说明
 
-# Run and deploy your AI Studio app
+当前项目已精简为静态预览版本，仅保留页面展示相关内容。
 
-This contains everything you need to run your app locally.
+## 保留文件
 
-View your app in AI Studio: https://ai.studio/apps/a9890d59-2b2d-4e39-b43f-1459faee6c55
+- `share.html`：最终可直接预览的页面
+- `README.md`：使用说明
+- `.gitignore`：仓库忽略规则
 
-## Run Locally
+## 本地预览
 
-**Prerequisites:**  Node.js
+在当前目录执行：
 
+```bash
+python3 -m http.server 8002
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+浏览器打开：
+
+`http://localhost:8002/share.html`
