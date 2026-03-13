@@ -66,6 +66,17 @@
     </script>
     <!-- Babel Standalone -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+    
+    <!-- 埋点统计脚本示例 (请替换为实际的统计代码，如百度统计/Google Analytics) -->
+    <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?d2452a4f1dbbda1051d8eaa3af70c96b";
+      var s = document.getElementsByTagName("script")[0]; 
+      s.parentNode.insertBefore(hm, s);
+    })();
+    </script>
 </head>
 <body class="bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 h-screen w-screen overflow-hidden">
     <div id="root" class="h-full w-full"></div>
@@ -73,10 +84,42 @@
     <!-- Main Entry -->
     <script id="app-source" type="text/plain">
 // Consolidated Imports
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Square, User, UserPlus, Users, X, Zap } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+
+// --- Analytics Hook (埋点统计工具) ---
+const useAnalytics = () => {
+  // 模拟发送埋点数据
+  const sendToAnalytics = useCallback((eventName: string, data: any = {}) => {
+    // 1. 打印日志方便调试
+    console.log(`[Analytics] ${eventName}`, data);
+
+    // 2. 如果接入了第三方统计（如百度统计），可以在这里调用
+    if (window._hmt) {
+      // 百度统计事件追踪格式: _hmt.push(['_trackEvent', category, action, opt_label, opt_value]);
+      // 这里我们将 eventName 作为 action, data 转为 string 作为 label
+      window._hmt.push(['_trackEvent', 'interaction', eventName, JSON.stringify(data)]);
+    }
+
+    // 3. 如果有后端接口，可以在这里发送请求
+    // fetch('/api/log', {
+    //   method: 'POST',
+    //   body: JSON.stringify({ event: eventName, ...data, timestamp: Date.now() })
+    // }).catch(e => console.error('Analytics error', e));
+  }, []);
+
+  // 记录页面访问 (PV)
+  useEffect(() => {
+    sendToAnalytics('page_view', {
+      title: document.title,
+      url: window.location.href
+    });
+  }, [sendToAnalytics]);
+
+  return { trackEvent: sendToAnalytics };
+};
 
 // --- src/types.ts ---
 type Role = 'user' | 'ai';
@@ -947,6 +990,7 @@ const contactList = [
 ];
 
 function Workspace() {
+  const { trackEvent } = useAnalytics();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [tabs, setTabs] = useState<WorkspaceTab[]>([
     { id: 'feature-1', title: '[AI] 合肥100w学区房', type: 'feature' },
@@ -2079,6 +2123,9 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
 
   const handleSendMessage = (text: string, images?: string[]) => {
     if ((!text.trim() && (!images || images.length === 0)) || inputLocked) return;
+    
+    trackEvent('send_message', { length: text.length, hasImages: !!images });
+
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: text, images }]);
     setInputValue('');
     inputValueRef.current = '';
@@ -2326,7 +2373,10 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
             className="absolute inset-0 bg-white dark:bg-zinc-900 z-50 flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.1)] dark:shadow-[-10px_0_30px_rgba(0,0,0,0.5)]"
           >
             <div className="h-12 border-b border-zinc-200 dark:border-zinc-800 flex items-center px-4 shrink-0">
-              <button onClick={() => setSlideOverUser(null)} className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+              <button onClick={() => {
+                setSlideOverUser(null);
+                trackEvent('close_profile', { user: slideOverUser });
+              }} className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
                 <ChevronRight size={16} className="rotate-180" />
                 返回
               </button>
