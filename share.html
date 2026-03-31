@@ -65,7 +65,7 @@
     }
     </script>
     <!-- Babel Standalone -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+    <script src="https://fastly.jsdelivr.net/npm/@babel/standalone/babel.min.js" crossorigin></script>
     
     <!-- 埋点统计脚本示例 (请替换为实际的统计代码，如百度统计/Google Analytics) -->
     <script>
@@ -86,7 +86,7 @@
 // Consolidated Imports
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Square, User, UserPlus, Users, X, Zap } from 'lucide-react';
+import { ArrowUp, AtSign, Bot, Check, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock, Copy, FileText, Filter, History, Image as ImageIcon, ListFilter, Loader2, Mail, MessageSquare, MoreHorizontal, Play, Plus, RefreshCw, Search, Send, Slash, Square, User, UserPlus, Users, X, Zap, LineChart, UserCircle, FolderPlus, Eye, Trash2, PanelLeftOpen, AlertCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 // --- Analytics Hook (埋点统计工具) ---
@@ -143,6 +143,7 @@ interface TaskItem {
 
 type CardData = 
   | { type: 'audience'; name: string; count: number; updateCycle: 'hour' | 'day' | 'once'; samples: string[]; confirmed?: boolean }
+  | { type: 'group_package'; name: string; count: number; updateCycle: 'hour' | 'day' | 'once'; samples: string[]; confirmed?: boolean }
   | { type: 'config'; senders: string[]; blacklists: string[]; confirmed?: boolean }
   | { type: 'content_preview'; title: string; content: string; confirmed?: boolean }
   | { type: 'task_summary'; taskName: string; channel: string; pushTime: string; pushInterval: string; recipient: string; content: string; sender: string; confirmed?: boolean };
@@ -160,7 +161,7 @@ interface Message {
 
 interface Bubble {
   id: string;
-  type: 'audience' | 'task';
+  type: 'audience' | 'task' | 'group';
   text: string;
   items: { id: string; name: string; tabName: string }[];
 }
@@ -250,6 +251,85 @@ function AudienceCard({ data, onUserClick, onConfirm }: { data: Extract<CardData
             <><Check size={16} /> 已确认创建</>
           ) : (
             '确认创建人群包'
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GroupPackageCard({ data, onGroupClick, onUserClick, onConfirm }: { data: Extract<CardData, { type: 'group_package' }>, onGroupClick: (name: string) => void, onUserClick: (name: string) => void, onConfirm: () => void }) {
+  const cycleMap = {
+    'hour': '每小时更新',
+    'day': '每日更新',
+    'once': '一次性'
+  };
+
+  return (
+    <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm relative">
+      <div className="p-4 flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <User size={16} />
+            </div>
+            群聊包预览
+          </div>
+          <div className="text-xs font-mono bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded text-zinc-600 dark:text-zinc-400">
+            预估 {data.count.toLocaleString()} 个
+          </div>
+        </div>
+        
+        <div className="space-y-3 bg-zinc-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
+          <div className="flex justify-between text-xs">
+            <span className="text-zinc-500">群聊包名称</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{data.name}</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-zinc-500">更新周期</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{cycleMap[data.updateCycle]}</span>
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-xs text-zinc-500">抽样群聊 (点击查看档案)</div>
+          <div className="flex flex-wrap gap-2">
+            {data.samples.map((sample, i) => (
+              <div 
+                key={i}
+                className="flex items-center border border-zinc-200 dark:border-zinc-700 rounded-full overflow-hidden transition-colors hover:border-indigo-300 dark:hover:border-indigo-700"
+              >
+                <button 
+                  onClick={() => onGroupClick(sample)}
+                  className="px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400 border-r border-zinc-200 dark:border-zinc-700 transition-colors"
+                >
+                  {sample}
+                </button>
+                <button
+                  onClick={() => onUserClick(`群内客户-${sample}`)}
+                  title="查看群内唯一客户档案"
+                  className="px-3 py-1.5 text-xs text-emerald-600 dark:text-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                >
+                  客户
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button 
+          onClick={onConfirm}
+          disabled={data.confirmed}
+          className={`w-full py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors mt-2 ${
+            data.confirmed 
+              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 border border-emerald-200 dark:border-emerald-800/50' 
+              : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-100'
+          }`}
+        >
+          {data.confirmed ? (
+            <><Check size={16} /> 已确认创建</>
+          ) : (
+            '确认创建群聊包'
           )}
         </button>
       </div>
@@ -452,6 +532,7 @@ interface SmartInputProps {
   activeBubbleId?: string | null;
   onBubbleToggle?: (id: string | null) => void;
   locked?: boolean;
+  onStop?: () => void;
   pendingAction?: { type: 'append', text: string, id: number } | null;
 }
 
@@ -461,8 +542,7 @@ interface ContextItem {
   type: 'group';
 }
 
-function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbleClick, activeBubbleId: propActiveBubbleId, onBubbleToggle, locked, pendingAction }: SmartInputProps) {
-  const [showModeDropdown, setShowModeDropdown] = useState(false);
+function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbleClick, activeBubbleId: propActiveBubbleId, onBubbleToggle, locked, onStop, pendingAction }: SmartInputProps) {
   const [internalActiveBubbleId, setInternalActiveBubbleId] = useState<string | null>(null);
   const [atCategory, setAtCategory] = useState<string | null>(null);
   // Contexts removed as per request to have inline text
@@ -661,7 +741,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
                   }`}
                   onClick={() => setActiveBubbleId(activeBubbleId === bubble.id ? null : bubble.id)}
                 >
-                  {bubble.type === 'audience' ? <Users size={12} /> : <Zap size={12} />}
+                  {bubble.type === 'audience' ? <Users size={12} /> : bubble.type === 'group' ? <MessageSquare size={12} /> : <Zap size={12} />}
                   {bubble.text}
                 </motion.div>
 
@@ -675,7 +755,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
                       className="absolute bottom-full left-0 mb-2 w-48 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl shadow-xl overflow-hidden z-50"
                     >
                       <div className="px-3 py-2 text-xs font-medium text-zinc-500 border-b border-zinc-100 dark:border-zinc-700">
-                        {bubble.type === 'audience' ? '人群包列表' : '任务列表'}
+                        {bubble.type === 'audience' ? '人群包列表' : bubble.type === 'group' ? '群聊包列表' : '任务列表'}
                       </div>
                       <div className="p-1">
                         {bubble.items.map(item => (
@@ -688,7 +768,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
                             }}
                           >
                             <span className="text-zinc-400">
-                              {bubble.type === 'audience' ? <Users size={14} /> : <Zap size={14} />}
+                              {bubble.type === 'audience' ? <Users size={14} /> : bubble.type === 'group' ? <MessageSquare size={14} /> : <Zap size={14} />}
                             </span>
                             <span className="truncate">{item.name}</span>
                           </div>
@@ -705,39 +785,21 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
 
       {/* Top Bar: Mode Selector */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1 relative">
-        <div>
+        <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 p-0.5 rounded-lg">
           <button 
-            onClick={() => !locked && setShowModeDropdown(!showModeDropdown)}
+            onClick={() => !locked && setMode('圈选模式')}
             disabled={locked}
-            className="flex items-center gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded-md transition-colors disabled:opacity-50"
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mode === '圈选模式' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'} disabled:opacity-50`}
           >
-            {mode}
-            <ChevronDown size={12} />
+            圈选模式
           </button>
-          
-          <AnimatePresence>
-            {showModeDropdown && !locked && (
-              <motion.div 
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                className="absolute top-full left-3 mt-1 w-32 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-50"
-              >
-                <div 
-                  className="px-3 py-2 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer text-zinc-700 dark:text-zinc-300"
-                  onClick={() => { setMode('圈选模式'); setShowModeDropdown(false); }}
-                >
-                  圈选模式
-                </div>
-                <div 
-                  className="px-3 py-2 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer text-zinc-700 dark:text-zinc-300"
-                  onClick={() => { setMode('执行模式'); setShowModeDropdown(false); }}
-                >
-                  执行模式
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <button 
+            onClick={() => !locked && setMode('执行模式')}
+            disabled={locked}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mode === '执行模式' ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'} disabled:opacity-50`}
+          >
+            执行模式
+          </button>
         </div>
       </div>
 
@@ -777,7 +839,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          placeholder={locked ? "任务执行中，无法中止..." : "输入指令，或输入 @ 引用素材，/ 调用技能..."}
+          placeholder={locked ? "任务执行中，无法输入指令..." : "输入指令，或输入 @ 引用素材，/ 调用技能..."}
           disabled={locked}
           className="relative z-10 w-full bg-transparent border-none focus:ring-0 resize-none px-3 py-2 text-sm font-sans leading-normal text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 min-h-[60px] max-h-[200px] outline-none disabled:opacity-50"
           rows={2}
@@ -831,18 +893,29 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
           </button>
         </div>
         
-        <button 
-          onClick={() => {
-              if (!locked) {
-                  onSubmit(value, images);
-                  setImages([]);
-              }
-          }}
-          disabled={(!value.trim() && images.length === 0) || locked}
-          className="p-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 text-white rounded-md transition-colors"
-        >
-          <Send size={16} />
-        </button>
+        {locked ? (
+          <button 
+            onClick={onStop}
+            className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors flex items-center gap-1 px-3 text-xs font-medium"
+            title="停止任务"
+          >
+            <Square size={12} fill="currentColor" />
+            停止任务
+          </button>
+        ) : (
+          <button 
+            onClick={() => {
+                if (!locked) {
+                    onSubmit(value, images);
+                    setImages([]);
+                }
+            }}
+            disabled={!value.trim() && images.length === 0}
+            className="p-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-200 dark:disabled:bg-zinc-800 disabled:text-zinc-400 text-white rounded-md transition-colors"
+          >
+            <Send size={16} />
+          </button>
+        )}
       </div>
 
       {/* Popup Menus */}
@@ -912,6 +985,7 @@ function SmartInput({ mode, setMode, value, onChange, onSubmit, bubbles, onBubbl
               ) : (
                 <>
                   <MenuItem icon={<MessageSquare size={14} />} label="私聊推送" onClick={() => insertItem('私聊推送')} />
+                  <MenuItem icon={<Users size={14} />} label="群聊推送" onClick={() => insertItem('群聊推送')} />
                   <MenuItem icon={<ImageIcon size={14} />} label="朋友圈推送" onClick={() => insertItem('朋友圈推送')} />
                   <MenuItem icon={<FileText size={14} />} label="内容生成" onClick={() => insertItem('内容生成')} />
                 </>
@@ -1001,6 +1075,29 @@ const contactList = [
 function Workspace() {
   useAnalytics(); // 只用于记录 PV
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const maxWidth = window.innerWidth / 2;
+
+    const onMouseMove = (moveEvent) => {
+      const deltaX = startX - moveEvent.clientX;
+      const newWidth = Math.min(Math.max(startWidth + deltaX, 300), maxWidth);
+      setSidebarWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
   const [tabs, setTabs] = useState<WorkspaceTab[]>([
     { id: 'feature-1', title: '[AI] 合肥100w学区房', type: 'feature' },
     { id: 'chat-1', title: '杜小明精品大平层17...', type: 'chat' },
@@ -1015,7 +1112,12 @@ function Workspace() {
   ]);
   const [activeTabId, setActiveTabId] = useState('chat-8');
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [activeRightPanelTab, setActiveRightPanelTab] = useState('群档案');
   const [activeModule, setActiveModule] = useState<'chat' | 'groups'>('chat');
+  const [isCustomerMoreMenuOpen, setIsCustomerMoreMenuOpen] = useState(false);
+  const [isBlacklistModalOpen, setIsBlacklistModalOpen] = useState(false);
+  const [blacklistReason, setBlacklistReason] = useState('');
+  const [isReasonDropdownOpen, setIsReasonDropdownOpen] = useState(false);
   
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
@@ -1041,6 +1143,57 @@ function Workspace() {
   ];
 
   const [activeCategory, setActiveCategory] = useState('all');
+
+  const [customGroups, setCustomGroups] = useState([
+    { id: 'cg-1', name: '高潜客户', workflows: ['【勿选】微客3.0'], outputs: ['用户需要资料', '咨询学区政策，需要人工介入'] }
+  ]);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isOutputDropdownOpen, setIsOutputDropdownOpen] = useState(false);
+  const [groupForm, setGroupForm] = useState({ name: '', workflows: [] as string[], outputs: [] as string[] });
+  const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
+  const [viewingLogicGroupId, setViewingLogicGroupId] = useState<string | null>(null);
+  const [isGroupPanelOpen, setIsGroupPanelOpen] = useState(true);
+
+  const availableWorkflows = [
+    '测试勿用-ai自主追问', '【勿选】微客3.0', '(仅合肥)【新推送】沉...',
+    '小B智能体(周报)', '上线-走心文案', '测试数据光年',
+    '测试数据', '合肥用-沉默测试3', '测试2-朋友圈引流', '测试1-沉默用户开口3'
+  ];
+
+  const availableOutputs = [
+    '新房未找到匹配房源', '二手房未找到匹配房源', '用户在朋友圈有需要',
+    '未找到行情，需要人工介入', '房产知识输出不符合当前政策，需要人工介入',
+    '咨询学区政策，需要人工介入', '房东卖房', '租房', '用户需要资料'
+  ];
+
+  const handleCreateCustomGroup = () => {
+    const name = groupForm.name.trim();
+    if (name && groupForm.workflows.length > 0 && groupForm.outputs.length > 0) {
+      if (!/^[\u4e00-\u9fa5]{1,6}$/.test(name)) {
+        alert('分组名称必须是1-6个汉字');
+        return;
+      }
+      if (customGroups.some(g => g.name === name)) {
+        alert('分组名称不能重复');
+        return;
+      }
+      setCustomGroups([...customGroups, {
+        id: `cg-${Date.now()}`,
+        name: name,
+        workflows: groupForm.workflows,
+        outputs: groupForm.outputs
+      }]);
+      setIsCreateGroupModalOpen(false);
+      setGroupForm({ name: '', workflows: [], outputs: [] });
+    } else {
+      alert('请填写完整信息');
+    }
+  };
+
+  const handleDeleteCustomGroup = (id: string) => {
+    setCustomGroups(customGroups.filter(g => g.id !== id));
+    setDeletingGroupId(null);
+  };
 
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
 
@@ -1153,35 +1306,204 @@ function Workspace() {
            </div>
 
            {/* Right Panel: Customer Profile */}
-          <div className="w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-white dark:bg-zinc-950">
-            <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 border-b border-zinc-200 dark:border-zinc-800 text-xs">
-              <span className="font-medium text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 pb-1">客户档案</span>
-              <span className="text-zinc-500 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">客户画像</span>
-              <span className="text-zinc-500 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">客户行为</span>
-              <span className="text-zinc-500 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">快捷话术</span>
-              <span className="text-zinc-500 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">流转记录</span>
-              <span className="text-zinc-500 cursor-pointer hover:text-zinc-900 dark:hover:text-zinc-100">聊天记录</span>
+          <div className="w-[280px] border-l border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-white dark:bg-zinc-950 overflow-y-auto">
+            <div className="flex flex-wrap gap-x-4 gap-y-2 p-3 border-b border-zinc-200 dark:border-zinc-800 text-xs bg-zinc-50 dark:bg-zinc-900/50">
+              {['群档案', '群详情', '客户档案', '快捷话术', '聊天记录'].map(tab => (
+                <span 
+                  key={tab}
+                  onClick={() => setActiveRightPanelTab(tab)}
+                  className={`cursor-pointer px-2 py-1 rounded ${activeRightPanelTab === tab ? 'bg-white border border-blue-200 text-blue-600 dark:bg-zinc-800 dark:border-blue-800 dark:text-blue-400' : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-zinc-800/50'}`}
+                >
+                  {tab}
+                </span>
+              ))}
             </div>
-            <div className="p-3 flex justify-end">
-              <button className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
-                <RefreshCw size={12} /> 刷新
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-              <ProfileField label="意向价格" value="200万以内" type="固定" time="2026-03-04 10:18:35" />
-              <ProfileField label="意向购房面积/户型" value="120平左右" type="固定" time="2026-03-04 10:18:35" />
-              <ProfileField label="用户交易偏好" value="买房" type="固定" time="2026-03-04 10:18:35" />
-              <ProfileField label="用户所在城市" value="合肥" type="固定" time="2026-03-04 10:18:35" />
-              <ProfileField label="意向区域" value="柏堰湖区域" type="固定" time="2026-03-04 10:18:35" />
-              <ProfileField label="订阅行为" value="是" type="动态" time="2026-03-04 10:18:35" />
-              <ProfileField label="价格敏感度" value="高敏感度" type="动态" time="2026-03-04 10:18:35" />
-            </div>
+            
+            {activeRightPanelTab === '群档案' && (
+              <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-900/50 flex flex-col">
+                <div className="p-3 flex justify-between items-center text-xs text-zinc-500">
+                  <span>更新时间：2026-03-31 07:54:52</span>
+                  <button className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline">
+                    <RefreshCw size={12} /> 刷新档案
+                  </button>
+                </div>
+                
+                <div className="p-3 flex flex-col gap-3">
+                  {/* 群聊总结 */}
+                  <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
+                    <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-3">
+                      群聊总结
+                    </h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      目前处于单向沟通状态，经纪人推介了天一家园128㎡顶复房源（总价99万），强调了露台及采光优势并告知有钥匙可看房，但客户进群至今全程静默，未建立有效反馈。
+                    </p>
+                  </div>
+
+                  {/* 运营跟进建议 */}
+                  <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
+                    <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-3 flex items-center gap-2">
+                      <div className="bg-orange-100 text-orange-500 p-1 rounded">
+                        <LineChart size={14} />
+                      </div>
+                      运营跟进建议
+                    </h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      需打破严重的单向输出状态，防止用户因信息灌输退群。建议24小时内停止盲目询问，改为发送该房源露台实景视频或户型改造案例，并针对“99万总价”抛出一个具体封闭式问题（如：是否介意顶层无电梯）。运营可同步提供该小区成交分析报表，背书该房源的高性价比，引导用户开口。
+                    </p>
+                  </div>
+
+                  {/* 分销中介跟进建议 */}
+                  <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
+                    <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-3 flex items-center gap-2">
+                      <div className="bg-blue-100 text-blue-500 p-1 rounded">
+                        <UserCircle size={14} />
+                      </div>
+                      分销中介跟进建议
+                    </h3>
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                      针对沉默客户化“询问”为“展示”。锁定高赠送、带私家露台的稀缺性，拍摄顶复视野或生活场景短视频引发兴趣。重点强调“99万买128平”的超高得房率，以视觉冲击打破僵局，引导客户通过单价对比感知该房源的捡漏价值。
+                    </p>
+                  </div>
+
+                  {/* 客户意向 */}
+                  <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm border border-zinc-100 dark:border-zinc-800">
+                    <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-4">客户意向</h3>
+                    <div className="flex flex-col gap-3">
+                      <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                        <div className="text-xs text-zinc-500 mb-1">决策人</div>
+                        <div className="text-sm text-zinc-800 dark:text-zinc-200">未提及</div>
+                      </div>
+                      <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                        <div className="text-xs text-zinc-500 mb-1">学区意向</div>
+                        <div className="text-sm text-zinc-800 dark:text-zinc-200">未提及</div>
+                      </div>
+                      <div className="bg-zinc-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-zinc-100 dark:border-zinc-800">
+                        <div className="text-xs text-zinc-500 mb-1">当前阶段</div>
+                        <div className="text-sm text-zinc-800 dark:text-zinc-200">带着邀约中</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeRightPanelTab === '客户画像' && (
+              <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3 bg-zinc-50 dark:bg-zinc-900/50">
+                {/* Header info */}
+                <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center">
+                         <img src="https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=100&h=100&fit=crop" alt="avatar" className="w-full h-full object-cover" />
+                      </div>
+                      <div className="absolute bottom-0 right-0 w-4 h-4 bg-red-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white">
+                         ★
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-zinc-900 dark:text-zinc-100 text-base">平淡</div>
+                      <div className="flex gap-1 mt-1">
+                        <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">未在群</span>
+                        <span className="text-[10px] bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-1.5 py-0.5 rounded">未授权</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => setIsCustomerMoreMenuOpen(!isCustomerMoreMenuOpen)}
+                      className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {isCustomerMoreMenuOpen && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setIsCustomerMoreMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 z-20 py-1">
+                          <button 
+                            onClick={() => {
+                              setIsCustomerMoreMenuOpen(false);
+                              setIsBlacklistModalOpen?.(true);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            加入黑名单
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Basic Info */}
+                <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm">
+                  <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-4">基础信息</h3>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">手机号码：</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-900 dark:text-zinc-100"></span>
+                        <Copy className="w-3 h-3 text-zinc-400 cursor-pointer hover:text-zinc-600" />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">base_id：</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-900 dark:text-zinc-100">1729441630538216163</span>
+                        <Copy className="w-3 h-3 text-zinc-400 cursor-pointer hover:text-zinc-600" />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">unionid：</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-900 dark:text-zinc-100">obS_rt2KWfKCjFjGIf7Wui...</span>
+                        <Copy className="w-3 h-3 text-zinc-400 cursor-pointer hover:text-zinc-600" />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-500">788ID：</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-900 dark:text-zinc-100">7881299931199623</span>
+                        <Copy className="w-3 h-3 text-zinc-400 cursor-pointer hover:text-zinc-600" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Tags */}
+                <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm">
+                  <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200 mb-3">客户标签</h3>
+                  <div className="text-xs text-zinc-500 mb-2">CDP标签</div>
+                  <div className="flex flex-col gap-2 max-h-[120px] overflow-y-auto pr-2">
+                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 text-xs px-3 py-1.5 rounded-full w-max">新房_总价偏好_400-450万元</span>
+                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 text-xs px-3 py-1.5 rounded-full w-max">业务偏好_新房</span>
+                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-500 dark:text-blue-400 text-xs px-3 py-1.5 rounded-full w-max">新房_户型室数偏好_三室</span>
+                  </div>
+                </div>
+
+                {/* Follow-up Notes */}
+                <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg shadow-sm flex-1 min-h-[150px]">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-bold text-sm text-zinc-800 dark:text-zinc-200">跟进备注</h3>
+                    <div className="flex items-center gap-3 text-xs text-zinc-500">
+                      <button className="flex items-center gap-1 hover:text-blue-600">
+                        <Plus size={12} className="bg-blue-500 text-white rounded-full p-0.5" /> 添加
+                      </button>
+                      <button className="hover:text-blue-600">查看全部</button>
+                    </div>
+                  </div>
+                  {/* Empty area */}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       );
     }
     
-    if (activeTab.title.includes('合肥100w学区房')) {
+    if (activeTab.title === '[AI] 合肥100w学区房') {
       return (
         <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col relative overflow-hidden">
           <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 p-4">
@@ -1212,10 +1534,10 @@ function Workspace() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                  {['张三', '李四', '王五', '赵六', '钱七'].map((name, i) => (
+                  {['橙子', '家和万事兴', '贝壳张建', '桃燃', '用户7892'].map((name, i) => (
                     <tr key={i} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/20">
                       <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{name}</td>
-                      <td className="px-4 py-3 text-zinc-500 font-mono">78812998251107{i < 10 ? '0' + i : i}</td>
+                      <td className="px-4 py-3 text-zinc-500 font-mono">138{Math.floor(Math.random()*10000000).toString().padStart(8, '0')}</td>
                       <td className="px-4 py-3 text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline" onClick={() => setSelectedUser(name)}>查看档案</td>
                     </tr>
                   ))}
@@ -1250,6 +1572,108 @@ function Workspace() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
                     <div className="flex items-center gap-3 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+                      <div>
+                        <div className="font-bold text-lg">{selectedUser}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      {[
+                        { label: '意向价格', value: '200万以内', tag: '固定', time: '2026-03-04 10:18:35' },
+                        { label: '意向购房面积/户型', value: '120平左右', tag: '固定', time: '2026-03-04 10:18:35' },
+                        { label: '首付预算', value: '60万左右', tag: '固定', time: '2026-03-04 10:18:35' },
+                        { label: '购房目的', value: '学区房', tag: '固定', time: '2026-03-04 10:18:35' },
+                        { label: '关注区域', value: '政务区、高新区', tag: '固定', time: '2026-03-04 10:18:35' },
+                        { label: '决策周期', value: '3个月内', tag: '预测', time: '2026-03-04 10:18:35' }
+                      ].map((field, i) => (
+                        <div key={i} className="flex flex-col py-3 border-b border-zinc-100 dark:border-zinc-800/50 last:border-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm text-zinc-500">{field.label}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${field.tag === '固定' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'}`}>{field.tag}</span>
+                          </div>
+                          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{field.value}</div>
+                          <div className="text-[10px] text-zinc-400 mt-1">{field.time}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    if (activeTab.title === '[AI] 合肥100w学区房群') {
+      return (
+        <div className="w-full h-full bg-white dark:bg-zinc-950 flex flex-col relative overflow-hidden">
+          <div className="flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 p-4">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <MessageSquare size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-zinc-800 dark:text-zinc-200">{activeTab.title}</h2>
+              <div className="flex items-center gap-4 text-sm text-zinc-500 mt-1">
+                <span>预估群聊数: 1001 个</span>
+                <span>|</span>
+                <span>圈选条件: 合肥市/意向价格100-200万/学区房</span>
+                <span>|</span>
+                <span>创建人: 张三</span>
+                <span>|</span>
+                <span>创建时间: 2026-03-05 10:00:00</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-4">
+            <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">群名称</th>
+                    <th className="px-4 py-3 font-medium">room ID</th>
+                    <th className="px-4 py-3 font-medium">操作</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                  {['滨湖买房交流群', '政务区学区房群', '合肥刚需上车群', '高新买房群', '包河改善群'].map((name, i) => (
+                    <tr key={i} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/20">
+                      <td className="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{name}</td>
+                      <td className="px-4 py-3 text-zinc-500 font-mono">108138770362932{i < 10 ? '0' + i : i}</td>
+                      <td className="px-4 py-3 text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline" onClick={() => setSelectedUser(name)}>查看群档案</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          {/* Profile Drawer */}
+          <AnimatePresence>
+            {selectedUser && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.5 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setSelectedUser(null)}
+                  className="absolute inset-0 bg-black z-10"
+                />
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="absolute right-0 top-0 bottom-0 w-[320px] bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 z-20 shadow-xl flex flex-col"
+                >
+                  <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+                    <h3 className="font-medium text-zinc-900 dark:text-zinc-100">群档案</h3>
+                    <button onClick={() => setSelectedUser(null)} className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded text-zinc-500">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-0">
+                    <div className="flex items-center gap-3 pb-6 border-b border-zinc-100 dark:border-zinc-800">
                       <div className="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-lg font-bold">
                         {selectedUser[0]}
                       </div>
@@ -1257,10 +1681,59 @@ function Workspace() {
                         <div className="font-bold text-lg">{selectedUser}</div>
                       </div>
                     </div>
-                    <ProfileField label="意向价格" value="100万左右" type="固定" time="2026-03-05 10:05:22" />
-                    <ProfileField label="购房需求" value="学区房" type="固定" time="2026-03-05 10:05:22" />
-                    <ProfileField label="预算范围" value="80-120万" type="动态" time="2026-03-05 10:06:15" />
-                    <ProfileField label="关注区域" value="政务区、滨湖区" type="动态" time="2026-03-05 10:07:30" />
+                    
+                    <div className="flex flex-col gap-6 mt-6">
+                      {/* 群聊总结 */}
+                      <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-xl">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">群聊总结</span>
+                        </div>
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                          客服建群后，分析师与经纪人孙际玉、曹锐报协同服务。经纪人重点推介“康居时代家园”两套房源（133㎡/115万、110㎡/110万），并上传了房源实拍视频，多次@用户邀约周末实地带看。用户“橙子”自始至终未在群内发表任何言论，沟通处于单向状态。
+                        </div>
+                      </div>
+
+                      {/* 运营跟进建议 */}
+                      <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-xl">
+                        <div className="flex items-center gap-2 mb-3">
+                          <MessageSquare size={16} className="text-orange-500" />
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">运营跟进建议</span>
+                        </div>
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                          变换话题节奏以打破单向沟通僵局。督促经纪人24小时内停止盲目@用户，改为私聊确认原因并在群内发布小区市场成交价对比分析。协助搜寻周边更具性价比的低总价盘源，由分析师从资产保值角度重新梳理需求，降低用户入群压力。
+                        </div>
+                      </div>
+
+                      {/* 分销中介跟进建议 */}
+                      <div className="bg-slate-50 dark:bg-zinc-800/50 p-4 rounded-xl">
+                        <div className="flex items-center gap-2 mb-3">
+                          <User size={16} className="text-blue-500" />
+                          <span className="font-bold text-zinc-900 dark:text-zinc-100">分销中介跟进建议</span>
+                        </div>
+                        <div className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                          停止单向硬性邀约，改为发送“康居时代vs周边同价位小区”的优劣对比分析，提供顾问式服务。利用价格钩子（如房东急售谈价空间、近期成交低价）试探用户的真实预算底线和对房源的反馈。
+                        </div>
+                      </div>
+
+                      {/* 客户意向 */}
+                      <div>
+                        <div className="font-bold text-zinc-900 dark:text-zinc-100 mb-3">客户意向</div>
+                        <div className="flex flex-col gap-2">
+                          <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-zinc-500 mb-1">决策人</div>
+                            <div className="text-sm text-zinc-900 dark:text-zinc-100">未知</div>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-zinc-500 mb-1">学区意向</div>
+                            <div className="text-sm text-zinc-900 dark:text-zinc-100">未提及</div>
+                          </div>
+                          <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 rounded-lg">
+                            <div className="text-xs text-zinc-500 mb-1">当前阶段</div>
+                            <div className="text-sm text-zinc-900 dark:text-zinc-100">带着邀约中</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               </>
@@ -1528,13 +2001,138 @@ function Workspace() {
          </div>
       </div>
 
+      {/* Group List Panel */}
+      {activeModule === 'chat' && isGroupPanelOpen && (
+        <div className="w-[180px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/30 dark:bg-zinc-900/10">
+          <div className="p-4 flex items-center gap-2 font-medium text-zinc-900 dark:text-zinc-100">
+            <button 
+              onClick={() => setIsGroupPanelOpen(false)}
+              className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1 -ml-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800"
+              title="收起分组"
+            >
+              <ListFilter size={18} />
+            </button>
+            会话分组
+          </div>
+          <div className="flex-1 overflow-y-auto py-2">
+            <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 cursor-pointer">
+              <div className="w-4 h-4 grid grid-cols-2 gap-0.5">
+                <div className="bg-current rounded-[2px]"></div>
+                <div className="bg-current rounded-[2px]"></div>
+                <div className="bg-current rounded-[2px]"></div>
+                <div className="bg-current rounded-[2px]"></div>
+              </div>
+              <span className="font-medium">全部</span>
+            </div>
+
+            <div className="mt-2">
+              <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
+                <Clock size={16} className="text-zinc-400" />
+                <span className="flex-1">当前接待</span>
+                <ChevronDown size={14} className="text-zinc-400 rotate-180" />
+              </div>
+              <div className="flex flex-col py-1">
+                {['待分配', '运营', 'AI', '业务专家', '线索承接'].map(item => (
+                  <div key={item} className="px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 cursor-pointer text-sm">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-1">
+              <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
+                <History size={16} className="text-zinc-400" />
+                <span className="flex-1">线索待派发</span>
+              </div>
+            </div>
+
+            <div className="mt-1">
+              <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
+                <RefreshCw size={16} className="text-zinc-400" />
+                <span className="flex-1">撮合流程中</span>
+              </div>
+            </div>
+
+            <div className="mt-1">
+              <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50">
+                <Clock size={16} className="text-zinc-400" />
+                <span className="flex-1">待跟进需求</span>
+                <ChevronDown size={14} className="text-zinc-400 rotate-180" />
+              </div>
+              <div className="flex flex-col py-1">
+                {['群/朋友圈需求', '找房需求', '转派后挖掘'].map(item => (
+                  <div key={item} className="px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 cursor-pointer text-sm">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 自定义分组 */}
+            <div className="mt-1">
+              <div className="flex items-center gap-2 px-4 py-2 text-zinc-700 dark:text-zinc-300 cursor-pointer hover:bg-zinc-100 dark:hover:bg-zinc-800/50 group/header">
+                <FolderPlus size={16} className="text-orange-500" />
+                <span className="flex-1">自定义分组</span>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setIsCreateGroupModalOpen(true); setIsOutputDropdownOpen(false); }}
+                  className="p-1 rounded opacity-0 group-hover/header:opacity-100 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-all"
+                  title="新建自定义分组"
+                >
+                  <Plus size={14} />
+                </button>
+              </div>
+              <div className="flex flex-col py-1">
+                {customGroups.map(group => (
+                  <div key={group.id} className="group/item flex items-center justify-between px-10 py-1.5 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-orange-600 dark:hover:text-orange-400 cursor-pointer text-sm transition-colors relative">
+                    <span className="truncate flex-1">{group.name}</span>
+                    <div className="hidden group-hover/item:flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity absolute right-4">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setViewingLogicGroupId(group.id); }}
+                        className="p-1 rounded text-zinc-400 hover:text-orange-600 hover:bg-orange-100 dark:hover:bg-orange-900/50 transition-colors"
+                        title="查看逻辑"
+                      >
+                        <Eye size={12} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setDeletingGroupId(group.id); }}
+                        className="p-1 rounded text-zinc-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                        title="删除"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {customGroups.length === 0 && (
+                  <div className="px-10 py-1.5 text-xs text-zinc-400">
+                    暂无自定义分组
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Left Panel: Session or Contact List */}
-      <div className="w-[280px] border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/50 dark:bg-zinc-900/20">
+      <div className={`${activeModule === 'chat' ? 'w-[320px]' : 'w-[280px]'} border-r border-zinc-200 dark:border-zinc-800 flex flex-col shrink-0 bg-zinc-50/50 dark:bg-zinc-900/20`}>
         {activeModule === 'chat' ? (
           <>
-            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-col gap-3">
+            <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <span className="font-medium">全部会话</span>
+                <div className="flex items-center gap-2">
+                  {!isGroupPanelOpen && (
+                    <button 
+                      onClick={() => setIsGroupPanelOpen(true)}
+                      className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors p-1 -ml-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                      title="展开分组"
+                    >
+                      <PanelLeftOpen size={18} />
+                    </button>
+                  )}
+                  <span className="font-bold text-base text-zinc-900 dark:text-zinc-100">全部会话</span>
+                </div>
               </div>
               <div className="relative">
                 <input 
@@ -1719,12 +2317,23 @@ function Workspace() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="absolute right-0 top-0 bottom-0 w-[400px] border-l border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl flex flex-col z-40 shadow-2xl"
+            style={{ width: sidebarWidth }}
+            className="absolute right-0 top-0 bottom-0 border-l border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl flex flex-col z-40 shadow-2xl"
           >
+            <div 
+              onMouseDown={handleMouseDown}
+              className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-500/50 z-50 transition-colors"
+            />
             <Sidebar 
               onClose={() => setIsSidebarOpen(false)} 
               onOpenTab={openTab} 
               pendingAction={pendingSidebarAction}
+              isBlacklistModalOpen={isBlacklistModalOpen}
+              setIsBlacklistModalOpen={setIsBlacklistModalOpen}
+              blacklistReason={blacklistReason}
+              setBlacklistReason={setBlacklistReason}
+              isReasonDropdownOpen={isReasonDropdownOpen}
+              setIsReasonDropdownOpen={setIsReasonDropdownOpen}
             />
           </motion.div>
         )}
@@ -1780,6 +2389,325 @@ function Workspace() {
           </div>
         </>
       )}
+
+      {/* --- Modals --- */}
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deletingGroupId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-[400px] p-6 border border-zinc-200 dark:border-zinc-800"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
+                  <AlertCircle size={20} />
+                </div>
+                <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100">确认删除自定义分组？</h3>
+              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 pl-13">
+                删除后将无法恢复，且全局不可见。请确认是否继续？
+              </p>
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => setDeletingGroupId(null)}
+                  className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => handleDeleteCustomGroup(deletingGroupId)}
+                  className="px-4 py-2 text-sm text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm"
+                >
+                  确认删除
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* View Logic Modal */}
+      <AnimatePresence>
+        {viewingLogicGroupId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setViewingLogicGroupId(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-[480px] overflow-hidden border border-zinc-200 dark:border-zinc-800"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50">
+                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Eye size={16} className="text-indigo-500" />
+                  分组创建逻辑
+                </h3>
+                <button onClick={() => setViewingLogicGroupId(null)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6">
+                {(() => {
+                  const group = customGroups.find(g => g.id === viewingLogicGroupId);
+                  if (!group) return null;
+                  return (
+                    <div className="space-y-5">
+                      <div>
+                        <div className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">工作流名称</div>
+                        <div className="flex flex-wrap gap-2">
+                          {group.workflows.map((wf, i) => (
+                            <div key={i} className="text-sm font-medium text-zinc-800 dark:text-zinc-200 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700">
+                              {wf}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">工作流输出字段 ({group.outputs.length})</div>
+                        <div className="flex flex-wrap gap-2">
+                          {group.outputs.map((field, i) => (
+                            <div key={i} className="text-sm text-indigo-700 dark:text-indigo-300 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-md border border-indigo-100 dark:border-indigo-800/30">
+                              {field}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+              <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/50 flex justify-end">
+                 <button 
+                  onClick={() => setViewingLogicGroupId(null)}
+                  className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
+                >
+                  关闭
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Group Modal */}
+      <AnimatePresence>
+        {isCreateGroupModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-[560px] max-h-[90vh] flex flex-col border border-zinc-200 dark:border-zinc-800"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <FolderPlus size={18} className="text-indigo-500" />
+                  新建自定义分组
+                </h3>
+                <button onClick={() => setIsCreateGroupModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-visible flex-1 space-y-6">
+                {/* Group Name */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    <span className="text-red-500 mr-1">*</span>自定义分组名称
+                  </label>
+                  <input 
+                    type="text"
+                    placeholder="最多输入6个汉字，不可重复"
+                    maxLength={6}
+                    value={groupForm.name}
+                    onChange={(e) => setGroupForm({...groupForm, name: e.target.value})}
+                    className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-zinc-400"
+                  />
+                </div>
+
+                {/* Workflow Name */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    <span className="text-red-500 mr-1">*</span>选择工作流名称
+                  </label>
+                  <div className="relative">
+                    <select 
+                      className="w-full appearance-none bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      value={groupForm.workflows[0] || ''}
+                      onChange={(e) => setGroupForm({...groupForm, workflows: [e.target.value]})}
+                    >
+                      <option value="" disabled>请选择工作流</option>
+                      {availableWorkflows.map(wf => (
+                        <option key={wf} value={wf}>{wf}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="absolute right-3 top-3 text-zinc-400 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Output Fields Dropdown */}
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    <span className="text-red-500 mr-1">*</span>选择工作流输出字段 (可多选)
+                  </label>
+                  <div className="relative">
+                    <div 
+                      onClick={() => setIsOutputDropdownOpen(!isOutputDropdownOpen)}
+                      className="w-full min-h-[42px] bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg px-4 py-2 text-sm text-zinc-900 dark:text-zinc-100 cursor-pointer flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    >
+                      <div className="flex-1 flex flex-wrap gap-1.5 pr-4 py-0.5">
+                        {groupForm.outputs.length === 0 ? (
+                          <span className="text-zinc-400">请选择输出字段</span>
+                        ) : (
+                          groupForm.outputs.map(output => (
+                            <span key={output} className="inline-flex items-center gap-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded text-xs">
+                              {output}
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setGroupForm({...groupForm, outputs: groupForm.outputs.filter(o => o !== output)});
+                                }}
+                                className="hover:bg-indigo-200 dark:hover:bg-indigo-800/50 rounded-full p-0.5"
+                              >
+                                <X size={10} />
+                              </button>
+                            </span>
+                          ))
+                        )}
+                      </div>
+                      <ChevronDown size={16} className={`text-zinc-400 shrink-0 transition-transform ${isOutputDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                    
+                    {isOutputDropdownOpen && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {availableOutputs.map(output => {
+                          const isSelected = groupForm.outputs.includes(output);
+                          return (
+                            <div 
+                              key={output}
+                              onClick={() => {
+                                const newOutputs = isSelected 
+                                  ? groupForm.outputs.filter(o => o !== output)
+                                  : [...groupForm.outputs, output];
+                                setGroupForm({...groupForm, outputs: newOutputs});
+                              }}
+                              className="flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 cursor-pointer"
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900'}`}>
+                                {isSelected && <Check size={12} strokeWidth={3} />}
+                              </div>
+                              <span className={`text-sm ${isSelected ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-zinc-700 dark:text-zinc-300'}`}>
+                                {output}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3 bg-zinc-50/50 dark:bg-zinc-800/50">
+                <button 
+                  onClick={() => setIsCreateGroupModalOpen(false)}
+                  className="px-5 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-zinc-200 dark:border-zinc-700"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={handleCreateCustomGroup}
+                  className="px-5 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!groupForm.name.trim() || groupForm.workflows.length === 0 || groupForm.outputs.length === 0}
+                >
+                  确认创建
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Blacklist Modal */}
+      <AnimatePresence>
+        {isBlacklistModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-zinc-900 rounded-lg shadow-xl w-[480px] flex flex-col"
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100">
+                  加入黑名单
+                </h3>
+                <button onClick={() => setIsBlacklistModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                  <X size={18} />
+                </button>
+              </div>
+              
+              <div className="p-8 pb-12 overflow-visible">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center text-sm text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
+                    <span className="text-red-500 mr-1">*</span>添加原因：
+                  </div>
+                  <div className="flex-1 relative">
+                    <div 
+                      onClick={() => setIsReasonDropdownOpen(!isReasonDropdownOpen)}
+                      className={`w-full bg-white dark:bg-zinc-800 border ${isReasonDropdownOpen ? 'border-blue-500' : 'border-zinc-200 dark:border-zinc-700'} rounded px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 cursor-pointer flex items-center justify-between transition-colors`}
+                    >
+                      <span className={blacklistReason ? '' : 'text-zinc-400'}>
+                        {blacklistReason || '请选择'}
+                      </span>
+                      <ChevronDown size={16} className={`text-zinc-400 transition-transform ${isReasonDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isReasonDropdownOpen && (
+                      <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded shadow-lg z-[60] py-1">
+                        {['中介同行', '无购房需求', '频繁转派用户', '同事'].map(reason => (
+                          <div 
+                            key={reason}
+                            onClick={() => {
+                              setBlacklistReason(reason);
+                              setIsReasonDropdownOpen(false);
+                            }}
+                            className={`px-4 py-2 text-sm cursor-pointer ${blacklistReason === reason ? 'bg-zinc-50 dark:bg-zinc-700/50 text-blue-600 dark:text-blue-400' : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700/50'}`}
+                          >
+                            {reason}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-3">
+                <button 
+                  onClick={() => setIsBlacklistModalOpen(false)}
+                  className="px-4 py-1.5 text-sm text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors border border-zinc-200 dark:border-zinc-700"
+                >
+                  取消
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!blacklistReason) return;
+                    setIsBlacklistModalOpen(false);
+                    setBlacklistReason('');
+                  }}
+                  disabled={!blacklistReason}
+                  className="px-4 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  确定
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1840,11 +2768,29 @@ interface SidebarProps {
   onClose: () => void;
   onOpenTab: (tabName: string) => void;
   pendingAction?: { type: 'append', text: string, id: number } | null;
+  isBlacklistModalOpen?: boolean;
+  setIsBlacklistModalOpen?: (open: boolean) => void;
+  blacklistReason?: string;
+  setBlacklistReason?: (reason: string) => void;
+  isReasonDropdownOpen?: boolean;
+  setIsReasonDropdownOpen?: (open: boolean) => void;
 }
 
-function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
+function Sidebar({ onClose, onOpenTab, pendingAction, isBlacklistModalOpen, setIsBlacklistModalOpen, blacklistReason, setBlacklistReason, isReasonDropdownOpen, setIsReasonDropdownOpen }: SidebarProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'init', role: 'ai', content: '你好！我是你的 AI 私域助手。你可以让我帮你圈选人群，或者创建推送任务。' }
+    { id: 'init', role: 'ai', content: '你好！我是你的 AI 私域助手。你可以让我帮你圈选人群，或者创建推送任务。' },
+    {
+      id: 'mock_group_pkg',
+      role: 'ai',
+      card: {
+        type: 'group_package',
+        name: '合肥100w学区房',
+        count: 1001,
+        updateCycle: 'once',
+        samples: ['群聊1', '群聊2', '群聊3'],
+        confirmed: false
+      }
+    }
   ]);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [mode, setMode] = useState<'圈选模式' | '执行模式'>('圈选模式');
@@ -1902,7 +2848,8 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { type: 'UPDATE_PROGRESS', payload: 50, delay: 800 },
       { type: 'UPDATE_PROGRESS', payload: 100, delay: 800 },
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '人群包‘合肥100w学区房’已创建完成。', actionButton: { label: '查看详情', tabName: '[AI] 合肥100w学区房' }, delay: 500 },
-      { type: 'ADD_BUBBLE', payload: { id: 'b1', type: 'audience', text: '关联人群包(1)', items: [{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }] }, delay: 1000 },
+      { type: 'ADD_BUBBLE', payload: { id: 'b1', type: 'audience', text: '人群包(1)', items: [{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }] }, delay: 1000 },
+      { type: 'ADD_BUBBLE', payload: { id: 'b3', type: 'group', text: '群聊包(1)', items: [{ id: 'i3', name: '合肥100w学区房群', tabName: '[AI] 合肥100w学区房群' }] }, delay: 500 },
       { type: 'TOGGLE_BUBBLE', payload: 'b1', delay: 1500 },
       { type: 'CLICK_BUBBLE_ITEM', payload: '[AI] 合肥100w学区房', delay: 1500 },
       { type: 'END', delay: 0 }
@@ -1939,7 +2886,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '任务已锁定，无法中止。', delay: 500 },
       { type: 'UPDATE_PROGRESS', payload: 100, delay: 1000 },
       { type: 'ADD_AI_MESSAGE_STREAM', payload: '推送任务已排期成功！\n\n任务名称：每日私聊推送_学区房名单\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_学区房名单' }, delay: 500 },
-      { type: 'ADD_BUBBLE', payload: { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }] }, delay: 1000 },
+      { type: 'ADD_BUBBLE', payload: { id: 'b2', type: 'task', text: '推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }] }, delay: 1000 },
       { type: 'TOGGLE_BUBBLE', payload: 'b2', delay: 1500 },
       { type: 'CLICK_BUBBLE_ITEM', payload: '[AI] 每日私聊推送_学区房名单', delay: 1500 },
       { type: 'END', delay: 0 }
@@ -2193,8 +3140,9 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
       { id: 'a11', role: 'ai', content: '推送任务已排期成功！\n\n任务名称：每日私聊推送_学区房名单\n预估覆盖：1,285 人\n发送内容：【限时特惠】合肥政务区学区房最新名单已出...\n发送人：C端客服\n黑名单过滤：未设置\n执行时间：每日 11:30', actionButton: { label: '查看详情', tabName: '[AI] 每日私聊推送_学区房名单' } }
     ]);
     setBubbles([
-      { id: 'b1', type: 'audience', text: '关联人群包(1)', items: [{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }] },
-      { id: 'b2', type: 'task', text: '关联推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }] }
+      { id: 'b1', type: 'audience', text: '人群包(1)', items: [{ id: 'i1', name: '合肥100w学区房', tabName: '[AI] 合肥100w学区房' }] },
+      { id: 'b3', type: 'group', text: '群聊包(1)', items: [{ id: 'i3', name: '合肥100w学区房群', tabName: '[AI] 合肥100w学区房群' }] },
+      { id: 'b2', type: 'task', text: '推送任务(1)', items: [{ id: 'i2', name: '每日私聊推送_学区房名单', tabName: '[AI] 每日私聊推送_学区房名单' }] }
     ]);
     setMode('执行模式');
     setShowHistory(false);
@@ -2271,10 +3219,11 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
                 </div>
               )}
               {msg.taskPlan && <TaskPlan tasks={msg.taskPlan} />}
-              {msg.card && msg.card.type === 'audience' && <AudienceCard data={msg.card} onUserClick={setSlideOverUser} onConfirm={() => {}} />}
-              {msg.card && msg.card.type === 'config' && <ConfigCard data={msg.card} onConfirm={() => {}} />}
+              {msg.card && msg.card.type === 'audience' && <AudienceCard data={msg.card} onUserClick={setSlideOverUser} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
+              {msg.card && msg.card.type === 'group_package' && <GroupPackageCard data={msg.card} onGroupClick={setSlideOverUser} onUserClick={setSlideOverUser} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
+              {msg.card && msg.card.type === 'config' && <ConfigCard data={msg.card} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
               {msg.card && msg.card.type === 'content_preview' && <ContentPreviewCard data={msg.card} />}
-              {msg.card && msg.card.type === 'task_summary' && <TaskSummaryCard data={msg.card} onConfirm={() => {}} />}
+              {msg.card && msg.card.type === 'task_summary' && <TaskSummaryCard data={msg.card} onConfirm={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, card: { ...m.card, confirmed: true } as CardData } : m))} />}
               {msg.progress !== undefined && (
                 <div className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
                   <div className="flex justify-between text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
@@ -2324,6 +3273,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
           activeBubbleId={activeBubbleId}
           onBubbleToggle={setActiveBubbleId}
           locked={inputLocked}
+          onStop={stopDemo}
           pendingAction={pendingAction}
         />
       </div>
@@ -2345,9 +3295,9 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
             </div>
             <div className="flex-1 overflow-y-auto p-2">
               {[
-                { title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', crowdPackCount: 1, pushTaskCount: 1, onClick: loadHistoryDemo },
-                { title: '生成朋友圈文案', date: '昨天 15:20', crowdPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) },
-                { title: '分析近期客户流失原因', date: '3月1日 09:15', crowdPackCount: 1, pushTaskCount: 0, onClick: () => setShowHistory(false) }
+                { title: '圈选合肥学区房用户并推送活动', date: '今天 10:30', crowdPackCount: 1, groupPackCount: 1, pushTaskCount: 1, onClick: loadHistoryDemo },
+                { title: '生成朋友圈文案', date: '昨天 15:20', crowdPackCount: 0, groupPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) },
+                { title: '分析近期客户流失原因', date: '3月1日 09:15', crowdPackCount: 1, groupPackCount: 0, pushTaskCount: 0, onClick: () => setShowHistory(false) }
               ].map((item, i) => (
                 <div key={i} className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800/50 last:border-0" onClick={item.onClick}>
                   <div className="flex justify-between items-start mb-1">
@@ -2358,10 +3308,13 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
                     {item.crowdPackCount > 0 && (
                         <span className="text-xs text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded">人群包({item.crowdPackCount})</span>
                     )}
+                    {item.groupPackCount > 0 && (
+                        <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">群聊包({item.groupPackCount})</span>
+                    )}
                     {item.pushTaskCount > 0 && (
                         <span className="text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">推送任务({item.pushTaskCount})</span>
                     )}
-                    {item.crowdPackCount === 0 && item.pushTaskCount === 0 && (
+                    {item.crowdPackCount === 0 && item.groupPackCount === 0 && item.pushTaskCount === 0 && (
                          <span className="text-xs text-zinc-400">无关联数据</span>
                     )}
                   </div>
@@ -2393,31 +3346,45 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-0">
-              <div className="pb-6">
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{slideOverUser}</h2>
+              <div className="pb-6 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                  {slideOverUser?.startsWith('群内客户-') ? '李四' : slideOverUser}
+                </h2>
+                <span className={`px-2 py-1 text-[10px] rounded border ${slideOverUser?.startsWith('群聊') && !slideOverUser.includes('客户') ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400'}`}>
+                  {slideOverUser?.startsWith('群聊') && !slideOverUser.includes('客户') ? '群聊档案' : '客户档案'}
+                </span>
               </div>
               
-              <div className="flex flex-col">
-                {[
+              <div className="flex flex-col mt-6">
+                {slideOverUser?.startsWith('群聊') && !slideOverUser.includes('客户') ? [
+                  { label: '群名称', value: slideOverUser, tag: '基础', time: '2026-03-04 10:18:35' },
+                  { label: '群人数', value: '2人 (含机器人)', tag: '基础', time: '2026-03-04 10:18:35' },
+                  { label: '群活跃度', value: '低', tag: '状态', time: '2026-03-04 10:18:35' },
+                  { label: '群标签', value: '学区房意向、高净值', tag: '画像', time: '2026-03-04 10:18:35' }
+                ].map((field, i) => (
+                  <div key={i} className="flex flex-col py-3 border-b border-zinc-100 dark:border-zinc-800/50 last:border-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-zinc-500">{field.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${field.tag === '基础' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'}`}>{field.tag}</span>
+                    </div>
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{field.value}</div>
+                    <div className="text-[10px] text-zinc-400 mt-1">{field.time}</div>
+                  </div>
+                )) : [
                   { label: '意向价格', value: '200万以内', tag: '固定', time: '2026-03-04 10:18:35' },
                   { label: '意向购房面积/户型', value: '120平左右', tag: '固定', time: '2026-03-04 10:18:35' },
-                  { label: '用户交易偏好', value: '买房', tag: '固定', time: '2026-03-04 10:18:35' },
-                  { label: '用户所在城市', value: '合肥', tag: '固定', time: '2026-03-04 10:18:35' },
-                  { label: '意向区域', value: '柏堰湖区域', tag: '固定', time: '2026-03-04 10:18:35' },
-                  { label: '订阅行为', value: '是', tag: '动态', time: '2026-03-04 10:18:35' },
-                  { label: '价格敏感度', value: '高敏感度', tag: '动态', time: '2026-03-04 10:18:35' }
-                ].map((item, i) => (
-                  <div key={i} className="py-4 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm text-zinc-500">{item.label}</span>
-                      <span className="text-xs px-1.5 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded text-[10px]">{item.tag}</span>
+                  { label: '首付预算', value: '60万左右', tag: '固定', time: '2026-03-04 10:18:35' },
+                  { label: '购房目的', value: '学区房', tag: '固定', time: '2026-03-04 10:18:35' },
+                  { label: '关注区域', value: '政务区、高新区', tag: '固定', time: '2026-03-04 10:18:35' },
+                  { label: '决策周期', value: '3个月内', tag: '预测', time: '2026-03-04 10:18:35' }
+                ].map((field, i) => (
+                  <div key={i} className="flex flex-col py-3 border-b border-zinc-100 dark:border-zinc-800/50 last:border-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-zinc-500">{field.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${field.tag === '固定' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400'}`}>{field.tag}</span>
                     </div>
-                    <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1">
-                      {item.value}
-                    </div>
-                    <div className="text-xs text-zinc-400 font-light">
-                      {item.time}
-                    </div>
+                    <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{field.value}</div>
+                    <div className="text-[10px] text-zinc-400 mt-1">{field.time}</div>
                   </div>
                 ))}
               </div>
@@ -2425,6 +3392,7 @@ function Sidebar({ onClose, onOpenTab, pendingAction }: SidebarProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
@@ -2444,11 +3412,23 @@ if (rootElement) {
 
 </script>
 <script>
-const sourceEl = document.getElementById('app-source');
-const sourceCode = sourceEl ? sourceEl.textContent : '';
-const transformed = Babel.transform(sourceCode, { presets: ['typescript', 'react'], sourceType: 'module', filename: 'app.tsx' });
-const blobUrl = URL.createObjectURL(new Blob([transformed.code], { type: 'text/javascript' }));
-import(blobUrl).catch((err) => { throw err; }).finally(() => URL.revokeObjectURL(blobUrl));
+window.addEventListener('DOMContentLoaded', () => {
+    if (typeof Babel === 'undefined') {
+        const errorMsg = 'Babel standalone 加载失败，请检查网络连接或更换 CDN。';
+        console.error(errorMsg);
+        document.body.innerHTML = `<div style="padding: 20px; color: red;">${errorMsg}</div>`;
+        return;
+    }
+    try {
+        const sourceEl = document.getElementById('app-source');
+        const sourceCode = sourceEl ? sourceEl.textContent : '';
+        const transformed = Babel.transform(sourceCode, { presets: ['typescript', 'react'], sourceType: 'module', filename: 'app.tsx' });
+        const blobUrl = URL.createObjectURL(new Blob([transformed.code], { type: 'text/javascript' }));
+        import(blobUrl).catch((err) => { throw err; }).finally(() => URL.revokeObjectURL(blobUrl));
+    } catch (err) {
+        console.error('Babel 编译失败:', err);
+    }
+});
 </script>
 </body>
 </html>
